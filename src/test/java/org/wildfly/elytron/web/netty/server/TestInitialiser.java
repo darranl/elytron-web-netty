@@ -16,7 +16,14 @@
 
 package org.wildfly.elytron.web.netty.server;
 
+import java.security.Provider;
+
+import org.wildfly.security.WildFlyElytronProvider;
+import org.wildfly.security.auth.server.HttpAuthenticationFactory;
 import org.wildfly.security.auth.server.SecurityDomain;
+import org.wildfly.security.http.HttpServerAuthenticationMechanismFactory;
+import org.wildfly.security.http.util.FilterServerMechanismFactory;
+import org.wildfly.security.http.util.SecurityProviderServerMechanismFactory;
 
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
@@ -41,6 +48,21 @@ class TestInitialiser extends ChannelInitializer<SocketChannel> {
         ChannelPipeline pipeline = ch.pipeline();
         pipeline.addLast(new HttpServerCodec());
         pipeline.addLast(new HttpServerExpectContinueHandler());
+        // TODO - Here we want to insert the full set of Elytron handlers in one, ideally using some API.
+        HttpServerAuthenticationMechanismFactory providerFactory = new SecurityProviderServerMechanismFactory(() -> new Provider[] {new WildFlyElytronProvider()});
+        HttpServerAuthenticationMechanismFactory httpServerMechanismFactory = new FilterServerMechanismFactory(providerFactory, true, "BASIC");
+        HttpAuthenticationFactory httpAuthenticationFactory = HttpAuthenticationFactory.builder()
+                .setSecurityDomain(securityDomain)
+                .setFactory(httpServerMechanismFactory)
+                .build();
+        ElytronInboundHandler inboundHandler = new ElytronInboundHandler(httpAuthenticationFactory, null);
+        ElytronOutboundHandler outboundHandler = new ElytronOutboundHandler();
+        ElytronRunAsHandler runAsHandler = new ElytronRunAsHandler(inboundHandler::getSecurityIdentity);
+
+        pipeline.addLast(outboundHandler);
+        pipeline.addLast(inboundHandler);
+        pipeline.addLast(runAsHandler);
+
         pipeline.addLast(new TestContentHandler(securityDomain));
     }
 

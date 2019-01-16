@@ -49,16 +49,25 @@ class TestContentHandler extends SimpleChannelInboundHandler<HttpObject> {
     private final SecurityDomain securityDomain;
 
     TestContentHandler(final SecurityDomain securityDomain) {
+        System.out.println("TestContentHandler:new");
+        new RuntimeException().printStackTrace();
+
         this.securityDomain = securityDomain;
     }
 
     @Override
     public void channelReadComplete(ChannelHandlerContext ctx) {
+        System.out.println("TestContentHandler:channelReadComplete");
+        new RuntimeException().printStackTrace();
+
         ctx.flush();
     }
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, HttpObject msg) throws Exception {
+        System.out.println("TestContentHandler:read0");
+        new RuntimeException().printStackTrace();
+
         if (msg instanceof HttpRequest) {
             HttpRequest req = (HttpRequest) msg;
 
