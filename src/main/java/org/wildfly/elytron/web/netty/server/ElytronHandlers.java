@@ -17,15 +17,15 @@
 package org.wildfly.elytron.web.netty.server;
 
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import org.wildfly.security.auth.server.HttpAuthenticationFactory;
-import org.wildfly.security.auth.server.MechanismConfiguration;
 import org.wildfly.security.auth.server.MechanismConfigurationSelector;
-import org.wildfly.security.auth.server.MechanismRealmConfiguration;
 import org.wildfly.security.auth.server.SecurityDomain;
 import org.wildfly.security.http.HttpServerAuthenticationMechanismFactory;
 
 import io.netty.channel.ChannelPipeline;
+import io.netty.handler.codec.http.HttpRequest;
 
 /**
  *
@@ -36,6 +36,7 @@ public class ElytronHandlers implements Function<ChannelPipeline, ChannelPipelin
     private SecurityDomain securityDomain;
     private MechanismConfigurationSelector mechanismConfigurationSelector;
     private HttpServerAuthenticationMechanismFactory httpServerAuthenticationMechanismFactory;
+    private Predicate<HttpRequest> authenticationRequired;
 
     private ElytronHandlers() {}
 
@@ -57,6 +58,12 @@ public class ElytronHandlers implements Function<ChannelPipeline, ChannelPipelin
         return this;
     }
 
+    public ElytronHandlers setAuthenticationRequired(final Predicate<HttpRequest> authenticationRequired) {
+        this.authenticationRequired = authenticationRequired;
+
+        return this;
+    }
+
     /**
      * Apply the configuration defined here to the provided {@link ChannelPipeline}.
      *
@@ -68,7 +75,7 @@ public class ElytronHandlers implements Function<ChannelPipeline, ChannelPipelin
                 .setFactory(httpServerAuthenticationMechanismFactory)
                 .setMechanismConfigurationSelector(mechanismConfigurationSelector)
                 .build();
-        ElytronInboundHandler inboundHandler = new ElytronInboundHandler(httpAuthenticationFactory, null);
+        ElytronInboundHandler inboundHandler = new ElytronInboundHandler(httpAuthenticationFactory, authenticationRequired);
         ElytronOutboundHandler outboundHandler = new ElytronOutboundHandler(inboundHandler::getElytronResponse);
         ElytronRunAsHandler runAsHandler = new ElytronRunAsHandler(inboundHandler::getSecurityIdentity);
 
