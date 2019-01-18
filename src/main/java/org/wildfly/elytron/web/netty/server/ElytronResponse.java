@@ -27,7 +27,7 @@ import java.util.List;
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-public class ElytronResponse {
+class ElytronResponse {
 
     private final List<Header> headers = new ArrayList<>();
     private volatile ByteArrayOutputStream outputStream;

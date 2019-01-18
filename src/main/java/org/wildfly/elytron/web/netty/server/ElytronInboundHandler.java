@@ -44,7 +44,7 @@ import io.netty.handler.codec.http.HttpVersion;
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-public class ElytronInboundHandler extends ChannelInboundHandlerAdapter {
+class ElytronInboundHandler extends ChannelInboundHandlerAdapter {
 
     private final HttpAuthenticationFactory httpAuthenticationFactory;
     private final SecurityDomain securityDomain;
@@ -53,7 +53,7 @@ public class ElytronInboundHandler extends ChannelInboundHandlerAdapter {
     private volatile ElytronResponse elytronResponse;
     private volatile SecurityIdentity securityIdentity;
 
-    public ElytronInboundHandler(final HttpAuthenticationFactory httpAuthenticationFactory, final Predicate<HttpRequest> authenticationRequired) {
+    ElytronInboundHandler(final HttpAuthenticationFactory httpAuthenticationFactory, final Predicate<HttpRequest> authenticationRequired) {
         this.httpAuthenticationFactory = httpAuthenticationFactory;
         this.securityDomain = httpAuthenticationFactory.getSecurityDomain();
         this.authenticationRequired = authenticationRequired;
@@ -106,13 +106,11 @@ public class ElytronInboundHandler extends ChannelInboundHandlerAdapter {
         super.channelRead(ctx, msg);
     }
 
-    // TODO Hide these
-
-    public SecurityIdentity getSecurityIdentity() {
+    SecurityIdentity getSecurityIdentity() {
         return securityIdentity;
     }
 
-    public ElytronResponse getElytronResponse() {
+    ElytronResponse getElytronResponse() {
         return elytronResponse;
     }
 

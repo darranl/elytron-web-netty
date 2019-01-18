@@ -31,18 +31,12 @@ import io.netty.handler.codec.http.HttpMessage;
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-public class ElytronOutboundHandler extends ChannelOutboundHandlerAdapter {
+class ElytronOutboundHandler extends ChannelOutboundHandlerAdapter {
 
     private final Supplier<ElytronResponse> elytronResponse;
 
-    public ElytronOutboundHandler(final Supplier<ElytronResponse> elytronResponse) {
+    ElytronOutboundHandler(final Supplier<ElytronResponse> elytronResponse) {
         this.elytronResponse = elytronResponse;
-    }
-
-    @Override
-    public void read(ChannelHandlerContext ctx) throws Exception {
-        System.out.println("ElytronOutboundHandler.read()");
-        super.read(ctx);
     }
 
     @Override

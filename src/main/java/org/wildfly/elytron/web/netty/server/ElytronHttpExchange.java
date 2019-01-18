@@ -17,6 +17,7 @@
 package org.wildfly.elytron.web.netty.server;
 
 import static org.wildfly.common.Assert.checkNotNullParam;
+
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
@@ -35,7 +36,6 @@ import org.wildfly.security.http.HttpScope;
 import org.wildfly.security.http.HttpServerCookie;
 import org.wildfly.security.http.Scope;
 
-import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpServerCodec;
 
@@ -44,7 +44,7 @@ import io.netty.handler.codec.http.HttpServerCodec;
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-public class ElytronHttpExchange implements HttpExchangeSpi {
+class ElytronHttpExchange implements HttpExchangeSpi {
 
     private final HttpRequest httpRequest;
     private final ElytronResponse elytronResponse;

@@ -30,11 +30,11 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-public class ElytronRunAsHandler extends ChannelInboundHandlerAdapter {
+class ElytronRunAsHandler extends ChannelInboundHandlerAdapter {
 
     private final Supplier<SecurityIdentity> securityIdentitySupplier;
 
-    public ElytronRunAsHandler(final Supplier<SecurityIdentity> securityIdentitySupplier) {
+    ElytronRunAsHandler(final Supplier<SecurityIdentity> securityIdentitySupplier) {
         this.securityIdentitySupplier = securityIdentitySupplier;
     }
 
