@@ -16,6 +16,7 @@
 
 package org.wildfly.elytron.web.netty.server;
 
+import static org.wildfly.elytron.web.netty.server.BasicAuthenticationTest.ELYTRON_USER;
 import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
@@ -46,19 +47,13 @@ class TestContentHandler extends SimpleChannelInboundHandler<HttpObject> {
     private static final AsciiString CONNECTION = AsciiString.cached("Connection");
     private static final AsciiString KEEP_ALIVE = AsciiString.cached("keep-alive");
 
-    private final SecurityDomain securityDomain;
-
-    TestContentHandler(final SecurityDomain securityDomain) {
+    TestContentHandler() {
         System.out.println("TestContentHandler:new");
-        new RuntimeException().printStackTrace();
-
-        this.securityDomain = securityDomain;
     }
 
     @Override
     public void channelReadComplete(ChannelHandlerContext ctx) {
         System.out.println("TestContentHandler:channelReadComplete");
-        new RuntimeException().printStackTrace();
 
         ctx.flush();
     }
@@ -66,7 +61,6 @@ class TestContentHandler extends SimpleChannelInboundHandler<HttpObject> {
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, HttpObject msg) throws Exception {
         System.out.println("TestContentHandler:read0");
-        new RuntimeException().printStackTrace();
 
         if (msg instanceof HttpRequest) {
             HttpRequest req = (HttpRequest) msg;
@@ -76,6 +70,9 @@ class TestContentHandler extends SimpleChannelInboundHandler<HttpObject> {
             FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, OK, Unpooled.wrappedBuffer(getContent(identity)));
             response.headers().set(CONTENT_TYPE, "text/plain");
             response.headers().setInt(CONTENT_LENGTH, response.content().readableBytes());
+            if (identity != null) {
+                response.headers().add(ELYTRON_USER, identity);
+            }
 
             if (!keepAlive) {
                 ctx.write(response).addListener(ChannelFutureListener.CLOSE);
@@ -83,7 +80,10 @@ class TestContentHandler extends SimpleChannelInboundHandler<HttpObject> {
                 response.headers().set(CONNECTION, KEEP_ALIVE);
                 ctx.write(response);
             }
+        } else {
+            System.out.println("TestContentHandler - Not a HttpRequest");
         }
+
     }
 
     @Override
@@ -97,6 +97,7 @@ class TestContentHandler extends SimpleChannelInboundHandler<HttpObject> {
     }
 
     private String getElytronIdentity() {
+        SecurityDomain securityDomain = SecurityDomain.getCurrent();
         if (securityDomain != null) {
             SecurityIdentity securityIdentity = securityDomain.getCurrentSecurityIdentity();
             if (securityIdentity != null) {
@@ -106,6 +107,5 @@ class TestContentHandler extends SimpleChannelInboundHandler<HttpObject> {
 
         return null;
     }
-
 
 }

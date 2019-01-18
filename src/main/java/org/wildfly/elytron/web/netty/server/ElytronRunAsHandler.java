@@ -43,6 +43,7 @@ class ElytronRunAsHandler extends ChannelInboundHandlerAdapter {
         System.out.println("ElytronRunAsHandler.read()");
         SecurityIdentity securityIdentity = securityIdentitySupplier.get();
         if (securityIdentity != null) {
+            System.out.println("ElytronRunAsHandler - " + securityIdentity.getPrincipal().getName());
             securityIdentity.runAsFunctionEx((ExceptionFunction<Void, Void, Exception>) (v) -> {
                 super.channelRead(ctx, msg);
                 return null;

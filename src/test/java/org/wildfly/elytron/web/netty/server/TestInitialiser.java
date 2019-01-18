@@ -17,6 +17,7 @@
 package org.wildfly.elytron.web.netty.server;
 
 import java.security.Provider;
+import java.util.function.Function;
 
 import org.wildfly.security.WildFlyElytronProvider;
 import org.wildfly.security.auth.server.HttpAuthenticationFactory;
@@ -37,10 +38,10 @@ import io.netty.handler.codec.http.HttpServerExpectContinueHandler;
  */
 class TestInitialiser extends ChannelInitializer<SocketChannel> {
 
-    private final SecurityDomain securityDomain;
+    private final Function<ChannelPipeline, ChannelPipeline> securityHandler;
 
-    TestInitialiser(final SecurityDomain securityDomain) {
-        this.securityDomain = securityDomain;
+    TestInitialiser(final Function<ChannelPipeline, ChannelPipeline> securityHandler) {
+        this.securityHandler = securityHandler;
     }
 
     @Override
@@ -48,22 +49,8 @@ class TestInitialiser extends ChannelInitializer<SocketChannel> {
         ChannelPipeline pipeline = ch.pipeline();
         pipeline.addLast(new HttpServerCodec());
         pipeline.addLast(new HttpServerExpectContinueHandler());
-        // TODO - Here we want to insert the full set of Elytron handlers in one, ideally using some API.
-        HttpServerAuthenticationMechanismFactory providerFactory = new SecurityProviderServerMechanismFactory(() -> new Provider[] {new WildFlyElytronProvider()});
-        HttpServerAuthenticationMechanismFactory httpServerMechanismFactory = new FilterServerMechanismFactory(providerFactory, true, "BASIC");
-        HttpAuthenticationFactory httpAuthenticationFactory = HttpAuthenticationFactory.builder()
-                .setSecurityDomain(securityDomain)
-                .setFactory(httpServerMechanismFactory)
-                .build();
-        ElytronInboundHandler inboundHandler = new ElytronInboundHandler(httpAuthenticationFactory, null);
-        ElytronOutboundHandler outboundHandler = new ElytronOutboundHandler(inboundHandler::getElytronResponse);
-        ElytronRunAsHandler runAsHandler = new ElytronRunAsHandler(inboundHandler::getSecurityIdentity);
-
-        pipeline.addLast(outboundHandler);
-        pipeline.addLast(inboundHandler);
-        pipeline.addLast(runAsHandler);
-
-        pipeline.addLast(new TestContentHandler(securityDomain));
+        securityHandler.apply(pipeline);
+        pipeline.addLast(new TestContentHandler());
     }
 
 }
