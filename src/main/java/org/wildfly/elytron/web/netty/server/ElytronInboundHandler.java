@@ -25,11 +25,16 @@ import org.wildfly.security.auth.server.SecurityIdentity;
 import org.wildfly.security.http.HttpAuthenticationException;
 import org.wildfly.security.http.HttpAuthenticator;
 
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandler;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelOutboundHandler;
+import io.netty.handler.codec.http.DefaultFullHttpResponse;
+import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpRequest;
+import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.HttpVersion;
 
 /**
  * A {@link ChannelInboundHandler} implementation to intercept incoming requests and ensure authentication occurs.
@@ -39,15 +44,16 @@ import io.netty.handler.codec.http.HttpRequest;
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-class ElytronInboundHandler extends ChannelInboundHandlerAdapter {
+public class ElytronInboundHandler extends ChannelInboundHandlerAdapter {
 
     private final HttpAuthenticationFactory httpAuthenticationFactory;
     private final SecurityDomain securityDomain;
     private final Predicate<HttpRequest> authenticationRequired;
 
+    private volatile ElytronResponse elytronResponse;
     private volatile SecurityIdentity securityIdentity;
 
-    ElytronInboundHandler(final HttpAuthenticationFactory httpAuthenticationFactory, final Predicate<HttpRequest> authenticationRequired) {
+    public ElytronInboundHandler(final HttpAuthenticationFactory httpAuthenticationFactory, final Predicate<HttpRequest> authenticationRequired) {
         this.httpAuthenticationFactory = httpAuthenticationFactory;
         this.securityDomain = httpAuthenticationFactory.getSecurityDomain();
         this.authenticationRequired = authenticationRequired;
@@ -56,10 +62,13 @@ class ElytronInboundHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+        System.out.println("ElytronInboundHandler.channelRead()");
         if (msg instanceof HttpRequest) {
             HttpRequest httpRequest = (HttpRequest) msg;
-            boolean authenticationRequired = this.authenticationRequired != null ? this.authenticationRequired.test(httpRequest) : false;
-            final ElytronHttpExchange elytronExchange = new ElytronHttpExchange(httpRequest);
+            boolean authenticationRequired = this.authenticationRequired != null ? this.authenticationRequired.test(httpRequest) : true;
+
+            elytronResponse = new ElytronResponse();
+            final ElytronHttpExchange elytronExchange = new ElytronHttpExchange(httpRequest, elytronResponse, ctx.channel().remoteAddress());
 
             HttpAuthenticator authenticator = HttpAuthenticator.builder()
                     .setSecurityDomain(securityDomain)
@@ -80,8 +89,15 @@ class ElytronInboundHandler extends ChannelInboundHandlerAdapter {
             boolean authenticated = authenticator.authenticate();
 
             if (!authenticated) {
+                System.out.println("ElytronInboundHandler - Lets turn this request around.");
                 // Start by just turning the request around,
-
+                byte[] responseBody = elytronResponse.getResponseBytes();
+                HttpResponseStatus responseStatus = elytronResponse.getStatusCode() > 0 ? HttpResponseStatus.valueOf(elytronResponse.getStatusCode()) : HttpResponseStatus.OK;
+                FullHttpResponse response = responseBody != null
+                        ? new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, responseStatus, Unpooled.wrappedBuffer(responseBody))
+                        : new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, responseStatus);
+                ctx.write(response);
+                return;
             }
 
             securityIdentity = elytronExchange.getSecurityIdentity();
@@ -90,8 +106,14 @@ class ElytronInboundHandler extends ChannelInboundHandlerAdapter {
         super.channelRead(ctx, msg);
     }
 
-    SecurityIdentity getSecurityIdentity() {
+    // TODO Hide these
+
+    public SecurityIdentity getSecurityIdentity() {
         return securityIdentity;
+    }
+
+    public ElytronResponse getElytronResponse() {
+        return elytronResponse;
     }
 
 }

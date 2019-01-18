@@ -23,31 +23,33 @@ import org.wildfly.security.auth.server.SecurityIdentity;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandler;
-import io.netty.channel.ChannelOutboundHandlerAdapter;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 
 /**
  * The {@link ChannelInboundHandler} responsible for associating the current {@link SecurityIdentity}.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-class ElytronRunAsHandler extends ChannelOutboundHandlerAdapter {
+public class ElytronRunAsHandler extends ChannelInboundHandlerAdapter {
 
     private final Supplier<SecurityIdentity> securityIdentitySupplier;
 
-    ElytronRunAsHandler(final Supplier<SecurityIdentity> securityIdentitySupplier) {
+    public ElytronRunAsHandler(final Supplier<SecurityIdentity> securityIdentitySupplier) {
         this.securityIdentitySupplier = securityIdentitySupplier;
     }
 
     @Override
-    public void read(ChannelHandlerContext ctx) throws Exception {
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+        System.out.println("ElytronRunAsHandler.read()");
         SecurityIdentity securityIdentity = securityIdentitySupplier.get();
         if (securityIdentity != null) {
             securityIdentity.runAsFunctionEx((ExceptionFunction<Void, Void, Exception>) (v) -> {
-                super.read(ctx);
+                super.channelRead(ctx, msg);
                 return null;
             }, null);
         } else {
-            super.read(ctx);
+            System.out.println("ElytronRunAsHandler - No Identity");
+            super.channelRead(ctx, msg);
         }
     }
 

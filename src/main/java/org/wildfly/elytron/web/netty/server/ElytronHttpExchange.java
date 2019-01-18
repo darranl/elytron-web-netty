@@ -16,11 +16,15 @@
 
 package org.wildfly.elytron.web.netty.server;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -31,6 +35,7 @@ import org.wildfly.security.http.HttpScope;
 import org.wildfly.security.http.HttpServerCookie;
 import org.wildfly.security.http.Scope;
 
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpServerCodec;
 
@@ -39,14 +44,18 @@ import io.netty.handler.codec.http.HttpServerCodec;
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-class ElytronHttpExchange implements HttpExchangeSpi {
+public class ElytronHttpExchange implements HttpExchangeSpi {
 
     private final HttpRequest httpRequest;
+    private final ElytronResponse elytronResponse;
+    private final SocketAddress remoteSocketAddress;
 
     private volatile SecurityIdentity securityIdentity;
 
-    ElytronHttpExchange(final HttpRequest httpRequest) {
-        this.httpRequest = httpRequest;
+    ElytronHttpExchange(final HttpRequest httpRequest, final ElytronResponse elytronResponse, final SocketAddress remoteSocketAddress) {
+        this.httpRequest = checkNotNullParam("httpRequest", httpRequest);
+        this.elytronResponse = checkNotNullParam("elytronResponse", elytronResponse);
+        this.remoteSocketAddress = remoteSocketAddress;
     }
 
     /*
@@ -72,75 +81,51 @@ class ElytronHttpExchange implements HttpExchangeSpi {
      * Request Access Methods
      */
 
-    /* (non-Javadoc)
-     * @see org.wildfly.security.http.HttpExchangeSpi#getRequestHeaderValues(java.lang.String)
-     */
     @Override
     public List<String> getRequestHeaderValues(String headerName) {
-        // TODO Auto-generated method stub
-        return null;
+        return httpRequest.headers().getAll(headerName);
     }
 
-    /* (non-Javadoc)
-     * @see org.wildfly.security.http.HttpExchangeSpi#getRequestMethod()
-     */
     @Override
     public String getRequestMethod() {
-        // TODO Auto-generated method stub
-        return null;
+        return httpRequest.method().name();
     }
 
-    /* (non-Javadoc)
-     * @see org.wildfly.security.http.HttpExchangeSpi#getRequestURI()
-     */
     @Override
     public URI getRequestURI() {
-        // TODO Auto-generated method stub
-        return null;
+        try {
+            return new URI(httpRequest.uri());
+        } catch (URISyntaxException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
-    /* (non-Javadoc)
-     * @see org.wildfly.security.http.HttpExchangeSpi#getRequestPath()
-     */
     @Override
     public String getRequestPath() {
-        // TODO Auto-generated method stub
-        return null;
+        return getRequestURI().getPath();
     }
 
-    /* (non-Javadoc)
-     * @see org.wildfly.security.http.HttpExchangeSpi#getRequestParameters()
-     */
     @Override
     public Map<String, List<String>> getRequestParameters() {
-        // TODO Auto-generated method stub
-        return null;
+        return Collections.emptyMap();
     }
 
-    /* (non-Javadoc)
-     * @see org.wildfly.security.http.HttpExchangeSpi#getCookies()
-     */
     @Override
     public List<HttpServerCookie> getCookies() {
-        // TODO Auto-generated method stub
-        return null;
+        return Collections.emptyList();
     }
 
-    /* (non-Javadoc)
-     * @see org.wildfly.security.http.HttpExchangeSpi#getRequestInputStream()
-     */
     @Override
     public InputStream getRequestInputStream() {
-        // TODO Auto-generated method stub
         return null;
     }
 
-    /* (non-Javadoc)
-     * @see org.wildfly.security.http.HttpExchangeSpi#getSourceAddress()
-     */
     @Override
     public InetSocketAddress getSourceAddress() {
-        // TODO Auto-generated method stub
+        if (remoteSocketAddress instanceof InetSocketAddress) {
+            return (InetSocketAddress) remoteSocketAddress;
+        }
+
         return null;
     }
 
@@ -149,40 +134,24 @@ class ElytronHttpExchange implements HttpExchangeSpi {
      */
 
 
-    /* (non-Javadoc)
-     * @see org.wildfly.security.http.HttpExchangeSpi#addResponseHeader(java.lang.String, java.lang.String)
-     */
     @Override
     public void addResponseHeader(String headerName, String headerValue) {
-        // TODO Auto-generated method stub
-
+        elytronResponse.addHeader(headerName, headerValue);
     }
 
-    /* (non-Javadoc)
-     * @see org.wildfly.security.http.HttpExchangeSpi#setStatusCode(int)
-     */
     @Override
     public void setStatusCode(int statusCode) {
-        // TODO Auto-generated method stub
-
+        elytronResponse.setStatusCode(statusCode);
     }
 
-    /* (non-Javadoc)
-     * @see org.wildfly.security.http.HttpExchangeSpi#setResponseCookie(org.wildfly.security.http.HttpServerCookie)
-     */
     @Override
     public void setResponseCookie(HttpServerCookie cookie) {
-        // TODO Auto-generated method stub
-
+        // TODO
     }
 
-    /* (non-Javadoc)
-     * @see org.wildfly.security.http.HttpExchangeSpi#getResponseOutputStream()
-     */
     @Override
     public OutputStream getResponseOutputStream() {
-        // TODO Auto-generated method stub
-        return null;
+        return elytronResponse.getOutputStream();
     }
 
     /*

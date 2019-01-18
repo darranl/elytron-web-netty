@@ -56,7 +56,7 @@ class TestInitialiser extends ChannelInitializer<SocketChannel> {
                 .setFactory(httpServerMechanismFactory)
                 .build();
         ElytronInboundHandler inboundHandler = new ElytronInboundHandler(httpAuthenticationFactory, null);
-        ElytronOutboundHandler outboundHandler = new ElytronOutboundHandler();
+        ElytronOutboundHandler outboundHandler = new ElytronOutboundHandler(inboundHandler::getElytronResponse);
         ElytronRunAsHandler runAsHandler = new ElytronRunAsHandler(inboundHandler::getSecurityIdentity);
 
         pipeline.addLast(outboundHandler);

@@ -16,14 +16,47 @@
 
 package org.wildfly.elytron.web.netty.server;
 
+import java.util.function.Supplier;
+
+import org.wildfly.elytron.web.netty.server.ElytronResponse.Header;
+
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOutboundHandler;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
+import io.netty.channel.ChannelPromise;
+import io.netty.handler.codec.http.HttpMessage;
 
 /**
  * The {@link ChannelOutboundHandler} responsible for setting any headers on the outbound response.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
-class ElytronOutboundHandler extends ChannelOutboundHandlerAdapter {
+public class ElytronOutboundHandler extends ChannelOutboundHandlerAdapter {
+
+    private final Supplier<ElytronResponse> elytronResponse;
+
+    public ElytronOutboundHandler(final Supplier<ElytronResponse> elytronResponse) {
+        this.elytronResponse = elytronResponse;
+    }
+
+    @Override
+    public void read(ChannelHandlerContext ctx) throws Exception {
+        System.out.println("ElytronOutboundHandler.read()");
+        super.read(ctx);
+    }
+
+    @Override
+    public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+        System.out.println("ElytronOutboundHandler.write()");
+        ElytronResponse response;
+        if (msg instanceof HttpMessage && (response = elytronResponse.get()) != null) {
+            HttpMessage httpMessage = (HttpMessage) msg;
+            for (Header header : response.getHeaders()) {
+                httpMessage.headers().add(header.getName(), header.getValue());
+            }
+        }
+
+        super.write(ctx, msg, promise);
+    }
 
 }
