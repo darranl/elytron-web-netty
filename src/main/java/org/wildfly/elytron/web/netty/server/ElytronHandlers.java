@@ -28,6 +28,7 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.HttpRequest;
 
 /**
+ * Utility to insert a set of WildFly Elytron authentication handlers into the Netty pipeline.
  *
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
@@ -40,24 +41,48 @@ public class ElytronHandlers implements Function<ChannelPipeline, ChannelPipelin
 
     private ElytronHandlers() {}
 
+    /**
+     * Set the {@link SecurityDomain} to use for the applied security.
+     *
+     * @param securityDomain the {@link SecurityDomain} to use for the applied security.
+     * @return this {@link ElytronHandlers} to allow method chaining.
+     */
     public ElytronHandlers setSecurityDomain(final SecurityDomain securityDomain) {
         this.securityDomain = securityDomain;
 
         return this;
     }
 
+    /**
+     * Set the {@link MechanismConfigurationSelector} to use for the applied security.
+     *
+     * @param mechanismConfigurationSelector the {@link MechanismConfigurationSelector} to use for the applied security.
+     * @return this {@link ElytronHandlers} to allow method chaining.
+     */
     public ElytronHandlers setMechanismConfigurationSelector(final MechanismConfigurationSelector mechanismConfigurationSelector) {
         this.mechanismConfigurationSelector = mechanismConfigurationSelector;
 
         return this;
     }
 
+    /**
+     * Set the {@link HttpServerAuthenticationMechanismFactory} to use for the applied security.
+     *
+     * @param httpServerAuthenticationMechanismFactory the {@link HttpServerAuthenticationMechanismFactory} to use for the applied security.
+     * @return this {@link ElytronHandlers} to allow method chaining.
+     */
     public ElytronHandlers setFactory(final HttpServerAuthenticationMechanismFactory httpServerAuthenticationMechanismFactory) {
         this.httpServerAuthenticationMechanismFactory = httpServerAuthenticationMechanismFactory;
 
         return this;
     }
 
+    /**
+     * Set the {@link Predicate} to determine if authentication is required for a specific request.
+     *
+     * @param authenticationRequired the {@link Predicate} to determine if authentication is required for a specific request.
+     * @return this {@link ElytronHandlers} to allow method chaining.
+     */
     public ElytronHandlers setAuthenticationRequired(final Predicate<HttpRequest> authenticationRequired) {
         this.authenticationRequired = authenticationRequired;
 
@@ -66,6 +91,8 @@ public class ElytronHandlers implements Function<ChannelPipeline, ChannelPipelin
 
     /**
      * Apply the configuration defined here to the provided {@link ChannelPipeline}.
+     *
+     * The instance can be cached and used to configure multiple pipelines.
      *
      * @param pipeline the {@link ChannelPipeline} to apply the security configuration to.
      */
@@ -86,6 +113,11 @@ public class ElytronHandlers implements Function<ChannelPipeline, ChannelPipelin
         return pipeline;
     }
 
+    /**
+     * Create a new instance of {@link ElytronHandlers} to configure a Netty {@link ChannelPipeline}.
+     *
+     * @return a new instance of {@link ElytronHandlers} to configure a Netty {@link ChannelPipeline}.
+     */
     public static ElytronHandlers newInstance() {
         return new ElytronHandlers();
     }
