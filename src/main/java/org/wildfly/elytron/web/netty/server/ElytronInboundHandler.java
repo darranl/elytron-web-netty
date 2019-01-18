@@ -35,6 +35,7 @@ import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
+import io.netty.util.AsciiString;
 
 /**
  * A {@link ChannelInboundHandler} implementation to intercept incoming requests and ensure authentication occurs.
@@ -45,6 +46,8 @@ import io.netty.handler.codec.http.HttpVersion;
  * @author <a href="mailto:darran.lofthouse@jboss.com">Darran Lofthouse</a>
  */
 class ElytronInboundHandler extends ChannelInboundHandlerAdapter {
+
+    private static final AsciiString CONTENT_LENGTH = AsciiString.cached("Content-Length");
 
     private final HttpAuthenticationFactory httpAuthenticationFactory;
     private final SecurityDomain securityDomain;
@@ -96,6 +99,7 @@ class ElytronInboundHandler extends ChannelInboundHandlerAdapter {
                 FullHttpResponse response = responseBody != null
                         ? new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, responseStatus, Unpooled.wrappedBuffer(responseBody))
                         : new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, responseStatus);
+                response.headers().setInt(CONTENT_LENGTH, response.content().readableBytes());
                 ctx.write(response);
                 return;
             }
