@@ -30,7 +30,7 @@
 
     <groupId>org.wildfly.security.elytron-web</groupId>
     <artifactId>netty-server</artifactId>
-    <version>1.0.0.Beta1-SNAPSHOT</version>
+    <version>1.0.0.Beta1</version>
     <packaging>jar</packaging>
 
     <name>WildFly Elytron Web - Netty Integration</name>
